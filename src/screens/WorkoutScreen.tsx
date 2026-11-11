@@ -1,4 +1,4 @@
-import { db, type Exercise, type SetEntry, type WorkoutSession } from '../db/schema'
+import { db, weightStepOf, type Exercise, type SetEntry, type WorkoutSession } from '../db/schema'
 import {
   addSet,
   discardSession,
@@ -17,8 +17,6 @@ import { primeAudio, useRestTimer, useWakeLock } from '../lib/device'
 import { Stepper } from '../components/Stepper'
 import { Icon } from '../components/icons'
 import { useUi } from '../components/ui'
-
-const INCREASE_KG = 2.5
 
 export function WorkoutScreen({ session, onFinished }: { session: WorkoutSession; onFinished: (startedAt: number) => void }) {
   const ui = useUi()
@@ -177,11 +175,12 @@ function ExerciseCard({
   const open = sets.filter(s => !s.done)
   const lastMax = last ? Math.max(...last.sets.map(p => p.weight)) : 0
   const applied = open.length > 0 && open.every(s => s.weight > lastMax)
+  const step = weightStepOf(ex)
 
   const increase = async () => {
     for (const s of open) {
       const base = prevFor(s)?.weight ?? lastMax
-      await updateSet(s.id!, { weight: snapKg(base + INCREASE_KG) })
+      await updateSet(s.id!, { weight: snapKg(base + step) })
     }
   }
 
@@ -192,7 +191,7 @@ function ExerciseCard({
         <div className="grow">
           <h2>{ex.name}</h2>
           <p className="muted small">
-            {ex.sets} × {ex.repMin}–{ex.repMax}
+            {ex.sets} × {ex.repMin}–{ex.repMax} · ±{fmtKg(step)} kg
             {ex.unilateral && ' · einarmig, pro Seite'}
             {last && ` · zuletzt ${fmtShort(last.session.startedAt)}`}
           </p>
@@ -205,7 +204,7 @@ function ExerciseCard({
           <span className="grow">{applied ? 'Gewicht erhöht' : `Gewicht erhöhen – letztes Mal überall ${ex.repMax} Wdh.`}</span>
           {!applied && (
             <button className="hint-btn" onClick={increase}>
-              +{fmtKg(INCREASE_KG)} kg
+              +{fmtKg(step)} kg
             </button>
           )}
         </div>
@@ -220,13 +219,13 @@ function ExerciseCard({
                 Satz {s.setIndex}
                 {s.side !== 'both' && <span className={`side side-${s.side}`}>{s.side === 'L' ? 'Links' : 'Rechts'}</span>}
               </span>
-              <span className="muted small">{p ? `Zuletzt ${fmtKg(p.weight)} kg × ${p.reps}` : 'Noch keine Vorlage'}</span>
+              <span className="muted small">{p ? `Zuletzt ${fmtKg(p.weight)} kg × ${fmtKg(p.reps)}` : 'Noch keine Vorlage'}</span>
             </div>
             <div className="set-body">
               <Stepper
                 label="Gewicht"
                 value={s.weight}
-                step={0.5}
+                step={step}
                 max={500}
                 unit="kg"
                 format={fmtKg}
@@ -239,6 +238,7 @@ function ExerciseCard({
                 step={1}
                 max={100}
                 unit="Wdh"
+                format={fmtKg}
                 snap={Math.round}
                 onChange={v => updateSet(s.id!, { reps: v })}
               />

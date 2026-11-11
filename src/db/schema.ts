@@ -12,7 +12,12 @@ export interface Exercise {
   sets: number
   repMin: number
   repMax: number
+  /** Gewichtsschritt in kg für +/− und „Gewicht erhöhen“ (Vielfaches von 0,5). Fehlt bei alten Daten → Standard. */
+  weightStep?: number
 }
+
+export const DEFAULT_WEIGHT_STEP = 2.5
+export const weightStepOf = (e: Exercise) => (e.weightStep && e.weightStep > 0 ? e.weightStep : DEFAULT_WEIGHT_STEP)
 
 export interface WorkoutTemplate {
   /** 'A' | 'B' */

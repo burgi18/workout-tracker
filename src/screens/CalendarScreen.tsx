@@ -233,13 +233,13 @@ function SessionDetail({
         return (
           <div key={id} className="log-ex">
             <div className="log-name">{ex?.name ?? 'Gelöschte Übung'}</div>
-            {ex?.unilateral ? (
+            {rows.some(r => r.side !== 'both') ? (
               (['L', 'R'] as const).map(side => (
                 <div key={side} className="log-sets">
                   <span className="log-side">{side === 'L' ? 'Links' : 'Rechts'}</span>
                   {rows.filter(r => r.side === side).map(r => (
                     <span key={r.id} className="chip">
-                      {fmtKg(r.weight)} × {r.reps}
+                      {fmtKg(r.weight)} × {fmtKg(r.reps)}
                     </span>
                   ))}
                 </div>
@@ -248,7 +248,7 @@ function SessionDetail({
               <div className="log-sets">
                 {rows.map(r => (
                   <span key={r.id} className="chip">
-                    {fmtKg(r.weight)} × {r.reps}
+                    {fmtKg(r.weight)} × {fmtKg(r.reps)}
                   </span>
                 ))}
               </div>

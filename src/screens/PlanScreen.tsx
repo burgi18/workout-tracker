@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { db, type Exercise } from '../db/schema'
+import { DEFAULT_WEIGHT_STEP, db, weightStepOf, type Exercise } from '../db/schema'
+import { fmtKg, snapKg } from '../lib/date'
 import { addToTemplate, moveInTemplate, removeFromTemplate, saveExercise } from '../db/repo'
 import { useDbQuery } from '../db/useDb'
 import { Stepper } from '../components/Stepper'
@@ -60,7 +61,7 @@ export function PlanScreen() {
               <div className="grow">
                 <strong>{ex.name}</strong>
                 <p className="muted small">
-                  {ex.sets} × {ex.repMin}–{ex.repMax}
+                  {ex.sets} × {ex.repMin}–{ex.repMax} · ±{fmtKg(weightStepOf(ex))} kg
                   {ex.unilateral && ' · einarmig (links/rechts)'}
                 </p>
               </div>
@@ -115,17 +116,18 @@ function ExerciseSheet({
   onClose: () => void
 }) {
   const ui = useUi()
-  const base: Exercise = editing.mode === 'edit' ? editing.exercise : { name: '', unilateral: false, sets: 2, repMin: 8, repMax: 12 }
+  const base: Exercise = editing.mode === 'edit' ? editing.exercise : { name: '', unilateral: false, sets: 2, repMin: 8, repMax: 12, weightStep: DEFAULT_WEIGHT_STEP }
   const [name, setName] = useState(base.name)
   const [unilateral, setUnilateral] = useState(base.unilateral)
   const [sets, setSets] = useState(base.sets)
   const [repMin, setRepMin] = useState(base.repMin)
   const [repMax, setRepMax] = useState(base.repMax)
+  const [weightStep, setWeightStep] = useState(weightStepOf(base))
 
   const save = async () => {
     const trimmed = name.trim()
     if (!trimmed) return ui.toast('Bitte einen Namen eingeben')
-    const next = { ...base, name: trimmed, unilateral, sets, repMin: Math.min(repMin, repMax), repMax: Math.max(repMin, repMax) }
+    const next = { ...base, name: trimmed, unilateral, sets, repMin: Math.min(repMin, repMax), repMax: Math.max(repMin, repMax), weightStep }
     const id = await saveExercise(next)
     if (editing.mode === 'new') await addToTemplate(templateId, id)
     onClose()
@@ -152,6 +154,10 @@ function ExerciseSheet({
             <span className="muted small">Wdh. bis</span>
             <Stepper label="Wiederholungen bis" value={repMax} step={1} min={1} max={50} snap={Math.round} onChange={setRepMax} />
           </div>
+        </div>
+        <div className="field">
+          <span className="muted small">Gewichtsschritt (für +/− und „Gewicht erhöhen“)</span>
+          <Stepper label="Gewichtsschritt" value={weightStep} step={0.5} min={0.5} max={20} unit="kg" format={fmtKg} snap={snapKg} onChange={setWeightStep} />
         </div>
         <button className="btn primary block" onClick={save}>
           Speichern

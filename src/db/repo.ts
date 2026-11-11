@@ -1,5 +1,6 @@
 import { db, type Exercise, type SetEntry, type Side, type WorkoutSession, type WorkoutTemplate } from './schema'
 import { addDays, mondayOf, startOfDay } from '../lib/date'
+import { NOTES_FLAG, importNotesOnce } from './importNotes'
 
 /* ---------- Änderungs-Benachrichtigung (ersetzt Live-Queries) ---------- */
 
@@ -372,12 +373,13 @@ export async function countDemo() {
   return (await db.sessions.toArray()).filter(s => s.demo).length
 }
 
-/** Beim allerersten Start: Plan und Beispieldaten anlegen */
+/** Beim allerersten Start: Plan anlegen. Danach (einmalig) die Trainings aus den Notizen übernehmen. */
 export async function ensureSeeded() {
-  if (await getSetting('seeded', false)) return
-  if ((await db.templates.count()) === 0) await seedPlan()
-  if ((await db.sessions.count()) === 0) await seedDemo()
-  await db.settings.put({ key: 'seeded', value: true })
+  if (!(await getSetting('seeded', false))) {
+    if ((await db.templates.count()) === 0) await seedPlan()
+    await db.settings.put({ key: 'seeded', value: true })
+  }
+  await importNotesOnce()
 }
 
 /** Alles löschen, Plan auf Standard zurücksetzen (ohne Beispieldaten) */
@@ -386,7 +388,10 @@ export async function resetAll() {
     await Promise.all([db.exercises.clear(), db.templates.clear(), db.sessions.clear(), db.sets.clear(), db.settings.clear()])
   })
   await seedPlan()
-  await db.settings.put({ key: 'seeded', value: true })
+  await db.settings.bulkPut([
+    { key: 'seeded', value: true },
+    { key: NOTES_FLAG, value: true },
+  ])
   notify()
 }
 
@@ -462,6 +467,7 @@ export async function importAll(backup: Backup) {
     await db.sets.bulkPut(sets)
     await db.settings.bulkPut(settings)
     await db.settings.put({ key: 'seeded', value: true })
+    await db.settings.put({ key: NOTES_FLAG, value: true })
   })
   notify()
 }

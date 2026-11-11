@@ -21,13 +21,14 @@ src/
   db/
     schema.ts      Dexie-Datenbank und Typen: Exercise, WorkoutTemplate, WorkoutSession, SetEntry
     repo.ts        Alle Lese-/Schreibfunktionen, Seed (Plan + Beispieldaten), Export/Import
+    importNotes.ts Einmaliger Import der alten Handy-Notizen (22.9.–9.11.2026)
     useDb.ts       Hook: lädt aus IndexedDB und aktualisiert sich nach jeder Änderung
   lib/
     date.ts        Datums-/Zahlenformate (de-AT), Kalender-Raster, ISO-Woche
     stats.ts       Verlauf pro Übung, geschätztes 1RM (Epley)
     device.ts      Pausentimer, Ton/Vibration, Bildschirm-Wachhalten
     pwa.ts         Service-Worker-Registrierung, Installieren-Button
-  components/      Stepper (+/- mit 0,5 kg), LineChart (SVG), Dialoge, Icons
+  components/      Stepper (+/- mit Gewichtsschritt je Übung), LineChart (SVG), Dialoge, Icons
   screens/         Start, Workout, Kalender, Verlauf, Plan, Einstellungen
 public/
   manifest.webmanifest, sw.js, Icons
@@ -37,7 +38,7 @@ public/
 
 | Tabelle | Felder |
 | --- | --- |
-| `exercises` | `id`, `name`, `unilateral` (einarmig), `sets`, `repMin`, `repMax` |
+| `exercises` | `id`, `name`, `unilateral` (einarmig), `sets`, `repMin`, `repMax`, `weightStep` (kg pro +/−, Standard 2,5) |
 | `templates` | `id` ('A'/'B'), `name`, `subtitle`, `color`, `exerciseIds` (Reihenfolge) |
 | `sessions` | `id`, `templateId`, `startedAt`, `endedAt`, `durationSec`, `status` ('active'/'done'), `exerciseIds` (Momentaufnahme), `demo` |
 | `sets` | `id`, `sessionId`, `exerciseId`, `setIndex`, `side` ('both'/'L'/'R'), `weight`, `reps`, `done`, `doneAt` |
@@ -82,5 +83,7 @@ Neue Version pushen → GitHub baut und veröffentlicht. Beim nächsten Öffnen 
 ## Hinweise
 
 - **Pausentimer:** Ton und Vibration am Ende funktionieren, solange die App geöffnet ist. Android vibriert; iOS/iPadOS erlaubt Webseiten keine Vibration (dort gibt es nur den Ton). Der Bildschirm bleibt während des Trainings an, wenn der Browser es unterstützt.
-- **Beispieldaten:** Beim ersten Start werden ca. 8 Wochen Beispiel-Trainings angelegt. Entfernen unter *Mehr → Beispieldaten entfernen*.
+- **Gewichtsschritte:** pro Übung einstellbar (*Plan → Übung bearbeiten → Gewichtsschritt*, in 0,5-kg-Schritten). Gilt für +/− und „Gewicht erhöhen“. Eintippen geht weiterhin auf 0,5 kg genau.
+- **Alte Notizen:** Beim ersten Start von Version 1.1 werden die Trainings aus den Handy-Notizen (nur Einträge mit Datum) einmalig eingetragen und vorhandene Beispieldaten entfernt. Tage, an denen schon ein Training desselben Trainingstags gespeichert ist, werden übersprungen.
+- **Beispieldaten:** Lassen sich unter *Mehr* zum Ausprobieren laden und wieder entfernen.
 - **Icons neu erzeugen:** `tools/make-icons.mjs` (braucht `sharp`).
